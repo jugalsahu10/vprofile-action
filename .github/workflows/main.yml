@@ -76,8 +76,12 @@ jobs:
       - name: Get kube config file
         run: aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name ${{ env.EKS_CLUSTER }}
         
-      - name: Login to ECR
+      - name: Create ECR secret with dry run
+        id: create-ecr-secret
         run: kubectl create secret docker-registry regcred --docker-server=${{ secrets.REGISTRY }} --docker-username=AWS --docker-password=$(aws ecr get-login-password) --dry-run=client -o yaml > regcredout.yaml 
+        
+      - name: Create/SkipCreate secret
+        if: steps.create-ecr-secret.outcome == 'success'
         run: kubectl apply -f regcredout.yaml
 
       - name: Deploy Helm
